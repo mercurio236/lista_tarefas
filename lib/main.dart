@@ -20,6 +20,20 @@ class _HomeState extends State<Home> {
   final addFieldController = TextEditingController();
   List _todoList = [];
 
+  //override sobre escreve a função
+  @override
+  void initState() {
+    //vai carregar os dados quando o app iniciar
+    // TODO: implement initState
+    super.initState();
+
+    _readData().then((data) {
+      setState(() {
+        _todoList = json.decode(data);
+      });
+    });
+  }
+
   void _addTodo() {
     setState(() {
       Map<String, dynamic> newTodo =
@@ -28,6 +42,7 @@ class _HomeState extends State<Home> {
       addFieldController.text = '';
       newTodo['ok'] = false;
       _todoList.add(newTodo);
+      _saveData();
     });
   }
 
@@ -107,9 +122,10 @@ class _HomeState extends State<Home> {
                       child: Icon(
                           _todoList[index]['ok'] ? Icons.check : Icons.error),
                     ),
-                    onChanged: (check){
+                    onChanged: (check) {
                       setState(() {
                         _todoList[index]["ok"] = check;
+                        _saveData();
                       });
                     },
                   );
