@@ -19,6 +19,8 @@ class _HomeState extends State<Home> {
   //aqui as logicas
   final addFieldController = TextEditingController();
   List _todoList = [];
+  late Map<String, dynamic> _lastRemoved;
+  late int _lastRemovedPos;
 
   //override sobre escreve a função
   @override
@@ -69,6 +71,59 @@ class _HomeState extends State<Home> {
     }
   }
 
+  Widget buildItem(context, index) {
+    return Dismissible(
+      key: Key(DateTime.now().millisecondsSinceEpoch.toString()),
+      background: Container(
+        color: Colors.red,
+        child: Align(
+          alignment: Alignment(-0.9, 0),
+          child: Icon(
+            Icons.delete,
+            color: Colors.white,
+          ),
+        ),
+      ),
+      direction: DismissDirection.startToEnd,
+      child: CheckboxListTile(
+        title: Text(_todoList[index]['title']),
+        value: _todoList[index]['ok'],
+        secondary: CircleAvatar(
+          child: Icon(_todoList[index]['ok'] ? Icons.check : Icons.error),
+        ),
+        onChanged: (check) {
+          setState(() {
+            _todoList[index]["ok"] = check;
+            _saveData();
+          });
+        },
+      ),
+      onDismissed: (direction) {
+        setState(() {
+          _lastRemoved = Map.from(_todoList[index]);
+          _lastRemovedPos = index;
+          _todoList.removeAt(index);
+          _saveData();
+
+          final snack = SnackBar(
+            content: Text('Tarefa ${_lastRemoved['title']} removida!'),
+            action: SnackBarAction(
+              label: 'Desfazer',
+              onPressed: () {
+                setState(() {
+                  _todoList.insert(_lastRemovedPos, _lastRemoved);
+                  _saveData();
+                });
+              },
+            ),
+            duration: Duration(seconds: 2),
+          );
+          ScaffoldMessenger.of(context).showSnackBar(snack);
+        });
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -114,22 +169,7 @@ class _HomeState extends State<Home> {
                 //são listas que não vai ser renderizado se não estiver sendo exibido
                 padding: EdgeInsets.only(top: 10),
                 itemCount: _todoList.length,
-                itemBuilder: (context, index) {
-                  return CheckboxListTile(
-                    title: Text(_todoList[index]['title']),
-                    value: _todoList[index]['ok'],
-                    secondary: CircleAvatar(
-                      child: Icon(
-                          _todoList[index]['ok'] ? Icons.check : Icons.error),
-                    ),
-                    onChanged: (check) {
-                      setState(() {
-                        _todoList[index]["ok"] = check;
-                        _saveData();
-                      });
-                    },
-                  );
-                }),
+                itemBuilder: buildItem),
           ),
         ],
       ),
